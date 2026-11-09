@@ -158,7 +158,27 @@ make_compat() {
     link libudev.so.0     libudev.so.1       # jtagd antigo procura libudev.so.0
     link libncurses.so.5  libncurses.so.6
     link libtinfo.so.5    libtinfo.so.6
-    link libpng12.so.0    libpng16.so.16     # só é usado se o Quartus não trouxer a dele
+    # libpng12 de 32 bits original (o Quartus 11 foi compilado com libpng 1.2).
+    # NÃO dá para apontar para a libpng16: são incompatíveis e a interface trava.
+    local deb=libpng12-0_1.2.54-1ubuntu1.1_i386.deb
+    local sum=7845a109362b2e08b18ab029e21367da3c28a72f15952289d34348d5d429ce9f
+    if [ -L "$COMPAT/libpng12.so.0" ] || [ ! -e "$COMPAT/libpng12.so.0" ]; then
+        rm -f "$COMPAT/libpng12.so.0"
+        local tmp; tmp="$(mktemp -d)"
+        if curl -fsSL -o "$tmp/$deb" "http://archive.ubuntu.com/ubuntu/pool/main/libp/libpng/$deb" 2>/dev/null \
+           || wget -q -O "$tmp/$deb" "http://archive.ubuntu.com/ubuntu/pool/main/libp/libpng/$deb"; then
+            if [ "$(sha256sum "$tmp/$deb" | cut -d' ' -f1)" = "$sum" ]; then
+                dpkg-deb -x "$tmp/$deb" "$tmp/x" \
+                  && cp "$tmp/x/lib/i386-linux-gnu/libpng12.so.0.54.0" "$COMPAT/libpng12.so.0" \
+                  && echo "    libpng12 (i386, Ubuntu 16.04) instalada em $COMPAT"
+            else
+                warn "checksum da libpng12 não confere; não instalei"
+            fi
+        else
+            warn "não consegui baixar a libpng12 (sem internet?). A interface pode travar."
+        fi
+        rm -rf "$tmp"
+    fi
     true
 }
 
@@ -308,6 +328,7 @@ EOF
             cat > "$QROOT/bin.gerado/$t" <<EOF
 #!/usr/bin/env bash
 export QUARTUS_ROOTDIR="$QROOT"
+export GLIBC_TUNABLES="glibc.rtld.execstack=2"
 export LD_LIBRARY_PATH="$QROOT/linux:$COMPAT\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
 exec "$QROOT/linux/$t" "\$@"
 EOF
@@ -329,8 +350,10 @@ EOF
     echo "$mode" > "$QROOT/bin/.gerado_pelo_script"
     echo "    pasta bin criada (modo $mode, $n ferramentas)"
 }
-if [ ! -e "$QROOT/bin/quartus" ]; then
-    if [ -f "$QROOT/adm/qenv.sh" ]; then make_bin qenv; else make_bin direto; fi
+# Pelo qenv.sh o Quartus 11 fecha calado no Ubuntu 26.04; chamando linux/<ferramenta>
+# direto ele abre. Por isso o modo direto é o padrão.
+if [ ! -e "$QROOT/bin/quartus" ] || [ "$(cat "$QROOT/bin/.gerado_pelo_script" 2>/dev/null)" = qenv ]; then
+    make_bin direto
 fi
 chmod -R u+rwX "$DEST" 2>/dev/null
 find "$QROOT/bin" "$QROOT/linux" -maxdepth 1 -type f -exec chmod +x {} + 2>/dev/null

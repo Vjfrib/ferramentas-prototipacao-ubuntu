@@ -72,6 +72,17 @@ A glibc nova (2.41+) se recusa a carregar via `dlopen` bibliotecas marcadas com 
 - `pgm_parts.txt` copiado para `/etc/jtagd/jtagd.pgm_parts`.
 - Link `libudev.so.0 → libudev.so.1` numa pasta de compatibilidade, porque o jtagd antigo procura a `.so.0`.
 
+### 11. Interface travada + enxurrada de `libpng warning: Application built with libpng-1.2.7 but running with 1.6.57`
+O Quartus 11 foi compilado com a libpng 1.2 e não traz essa biblioteca junto. No começo eu fiz um link da `libpng12.so.0` para a `libpng16` do sistema, e foi um erro: as duas são incompatíveis e a janela abre, mas não responde.
+**Solução:** usar a `libpng12` original de 32 bits, do pacote `libpng12-0_1.2.54-1ubuntu1.1_i386.deb` do Ubuntu 16.04 (archive.ubuntu.com, com o sha256 conferido). O script extrai a biblioteca só para a pasta de compatibilidade do Quartus, sem instalar nada no sistema.
+
+### 12. O atalho fechava sem abrir nada
+Passando pelo `adm/qenv.sh`, o Quartus fechava calado. Chamando o binário `linux/quartus` direto, com `LD_LIBRARY_PATH` e `QUARTUS_ROOTDIR`, ele abre.
+**Solução:** os atalhos em `quartus/bin/` chamam o binário direto.
+
+### Dica: janela escondida no Wayland
+Na primeira vez, o Quartus abre uma caixinha de licença / Web Edition que trava a janela principal. No Wayland ela pode ficar atrás: use Alt+Tab.
+
 ### Aviso inofensivo
 `setlocale: LC_CTYPE: cannot change locale (en_US)`: o `qenv.sh` tenta usar `en_US`. Pode ignorar.
 
