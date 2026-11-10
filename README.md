@@ -86,11 +86,22 @@ Na primeira vez, o Quartus abre uma caixinha de licença / Web Edition que trava
 ### Aviso inofensivo
 `setlocale: LC_CTYPE: cannot change locale (en_US)`: o `qenv.sh` tenta usar `en_US`. Pode ignorar.
 
+## Simulação
+
+O Quartus parou de ter simulador embutido na versão 10. Para simular VHDL no Ubuntu, o mais simples é:
+
+```bash
+sudo apt install ghdl gtkwave
+```
+
 ## Pendente
 
 - [ ] **Arquivos de dispositivo (Cyclone I etc.):** o `devinfo.gz` não criou as famílias em `common/devinfo`, e os arquivos `devices/subscription/*.qda` estão num formato próprio. Ainda estou investigando.
 
 ## Ambiente testado
+
+Testado e funcionando: o Quartus abre pelo ícone do menu e responde normalmente.
+
 
 - Ubuntu 26.04 LTS "resolute", x86_64, glibc 2.43, 8 GB de RAM
 - Quartus II 11.0 Build 157 Web Edition (`11.0_quartus_free_linux.sh`)
