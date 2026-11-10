@@ -1,30 +1,94 @@
-# Quartus II 11.0 Web Edition no Ubuntu moderno (26.04)
+# Ferramentas de FPGA no Ubuntu moderno (26.04): Quartus II 11.0, ModelSim e GHDL
 
-Script para instalar o **Quartus II 11.0 Web Edition** (32 bits, de 2011) no **Ubuntu 26.04 "resolute" x86_64**.
+Scripts para montar o ambiente de FPGA no **Ubuntu 26.04 "resolute" x86_64**, com um menu no terminal para escolher o que instalar:
 
-Eu precisava do 11.0 porque é uma das últimas versões que suporta a **Cyclone I** (tenho uma placa com a **EP1C3T144C8N**). O Quartus Prime moderno não tem mais essa família. Só que o instalador de 2011 não roda num Linux de 2026, então fui resolvendo erro por erro e juntei tudo num script só.
+| Opção do menu | Script | O que faz |
+|---|---|---|
+| Quartus II 11.0 | `instalar_quartus11.sh` | Quartus II 11.0 Web Edition (32 bits, de 2011) + USB-Blaster |
+| GHDL + GTKWave | `instalar_ghdl_gtkwave.sh` | Simulador VHDL livre + visualizador de ondas, pelo apt |
+| ModelSim-Altera 11.0 | `instalar_modelsim11.sh` | ModelSim-Altera Starter Edition 11.0 (32 bits, sem licença) |
+
+Eu precisava do Quartus 11.0 porque é uma das últimas versões que suporta a **Cyclone I** (tenho uma placa com a **EP1C3T144C8N**). O Quartus Prime moderno não tem mais essa família. Só que o instalador de 2011 não roda num Linux de 2026, então fui resolvendo erro por erro e juntei tudo em scripts.
 
 ## Como usar
 
-1. Baixe o `11.0_quartus_free_linux.sh` da Altera/Intel e coloque em `~/Downloads`.
-2. Rode:
-
 ```bash
-cd ~/Downloads
-bash instalar_quartus11.sh
+git clone https://github.com/Vjfrib/quartus-ii-11-ubuntu.git
+cd quartus-ii-11-ubuntu
+bash instalar.sh
 ```
 
-- Não rode com `sudo` na frente. Ele pede a senha uma vez quando precisa.
-- Pode rodar várias vezes: o que já foi feito é pulado.
-- Não roda `apt autoremove` e não remove nenhum pacote.
-- Log completo em `~/quartus11-install.log`.
+Aparece um menu (whiptail) com as opções acima, mais "Ver o que já está instalado" e "Antes de começar". Cada opção roda o seu script, mostra a saída na tela e volta para o menu. Os scripts também podem ser rodados sozinhos, por exemplo `bash instalar_ghdl_gtkwave.sh`.
+
+Antes, baixe da Intel/Altera e deixe em `~/Downloads`:
+
+- Quartus: `11.0_quartus_free_linux.sh`
+- ModelSim: o ModelSim-Altera Starter Edition 11.0 para Linux (ex.: `11.0_modelsim_ase_linux.sh`). Também serve a pasta já extraída ou um `ModelSimSetup-*.run`. Outro caminho: `MODELSIM_SRC=/caminho bash instalar_modelsim11.sh`.
+
+O GHDL e o GTKWave vêm do apt, não precisa baixar nada.
+
+Regras que valem para todos os scripts:
+
+- Não rode com `sudo` na frente. Eles pedem a senha quando precisam.
+- Podem rodar várias vezes: o que já foi feito é pulado.
+- Não rodam `apt autoremove` e não removem nenhum pacote.
+- Cada um grava um log em `~`: `quartus11-install.log`, `ghdl-gtkwave-install.log`, `modelsim11-install.log`.
+
+## Quartus II 11.0
 
 Depois é só abrir **"Quartus II 11.0 Web Edition"** no menu, ou rodar `quartus11` no terminal.
 Para ver o USB-Blaster: `quartus11 jtagconfig`.
 
 Instala em `~/altera/11.0`. Os caminhos podem ser trocados com `QUARTUS_SH=` e `QUARTUS_SRC=`.
 
-## Os erros que apareceram (e como foram resolvidos)
+## Simulação
+
+O Quartus parou de ter simulador embutido na versão 10, então a simulação fica com o GHDL ou com o ModelSim. **Os dois funcionam inteiros pela linha de comando**, sem abrir janela nenhuma.
+
+### GHDL + GTKWave
+
+```bash
+ghdl -a --std=08 meu_circuito.vhd tb_meu_circuito.vhd    # analisa (compila)
+ghdl -e --std=08 tb_meu_circuito                         # elabora o testbench
+ghdl -r --std=08 tb_meu_circuito --vcd=onda.vcd --stop-time=1us
+gtkwave onda.vcd
+```
+
+O script instala os dois pelo apt e roda um testbench de contador para conferir.
+
+### ModelSim-Altera 11.0
+
+Instala em `~/altera/11.0/modelsim_ase`, cria os comandos `vlib`, `vcom`, `vlog`, `vsim` etc. (em `~/.local/bin`) e o atalho **"ModelSim-Altera 11.0"** no menu.
+
+Pela linha de comando:
+
+```bash
+vlib work                                              # cria a biblioteca
+vcom -93 meu_circuito.vhd tb_meu_circuito.vhd          # compila
+vsim -c tb_meu_circuito -do "run 1 us; quit -f"        # simula sem janela
+```
+
+Dá para colocar os comandos num arquivo `.do` e rodar `vsim -c tb_meu_circuito -do sim.do`. Para ver as ondas no GTKWave sem abrir o ModelSim, gere um VCD dentro do `.do`:
+
+```tcl
+vcd file onda.vcd
+vcd add -r /*
+run 1 us
+quit -f
+```
+
+Para o Quartus chamar o ModelSim (Tools > Run EDA Simulation Tool), aponte **Tools > Options > EDA Tool Options > ModelSim-Altera** para `~/altera/11.0/modelsim_ase/bin-ubuntu`.
+
+O que o script corrige no ModelSim:
+
+- **Bibliotecas de 32 bits:** o ModelSim 11 é 32 bits; o script instala as libs i386 (X11, Xft, fontconfig, ncurses...).
+- **`linux_rh60` não encontrado:** o script `vco` só conhece kernels 2.x e 3.x; no kernel 6 ele procura uma pasta que não existe. O script aponta esse caso para `linuxaloem` (o original fica em `vco.original`). Os comandos em `bin-ubuntu/` chamam os binários direto.
+- **Interface travando (Segmentation fault) por causa das fontes:** o Tk do ModelSim não funciona com a freetype nova. A solução conhecida é usar a freetype 2.4.12; como a fontconfig do Ubuntu 26.04 exige uma freetype nova, vai junto a fontconfig 2.11.94 (Ubuntu 16.04). As duas são baixadas de archive.ubuntu.com / old-releases.ubuntu.com com o sha256 conferido e ficam só em `modelsim_ase/compat-lib32`, sem mexer no sistema. Isso só afeta a interface; o modo texto (`vsim -c`) não precisa delas.
+- **Pilha executável:** a mesma correção do Quartus (problema 8 abaixo).
+
+A Starter Edition não precisa de licença; ela só fica mais lenta em projetos grandes, o que não faz diferença para exercícios.
+
+## Quartus: os erros que apareceram (e como foram resolvidos)
 
 ### 1. `libz.so.1: cannot open shared object file`
 O instalador é **ELF 32 bits**, e o Ubuntu só tinha a `libz` de 64 bits.
@@ -86,14 +150,6 @@ Na primeira vez, o Quartus abre uma caixinha de licença / Web Edition que trava
 ### Aviso inofensivo
 `setlocale: LC_CTYPE: cannot change locale (en_US)`: o `qenv.sh` tenta usar `en_US`. Pode ignorar.
 
-## Simulação
-
-O Quartus parou de ter simulador embutido na versão 10. Para simular VHDL no Ubuntu, o mais simples é:
-
-```bash
-sudo apt install ghdl gtkwave
-```
-
 ## Pendente
 
 - [ ] **Arquivos de dispositivo (Cyclone I etc.):** o `devinfo.gz` não criou as famílias em `common/devinfo`, e os arquivos `devices/subscription/*.qda` estão num formato próprio. Ainda estou investigando.
@@ -101,6 +157,7 @@ sudo apt install ghdl gtkwave
 ## Ambiente testado
 
 Testado e funcionando: o Quartus abre pelo ícone do menu e responde normalmente.
+O script do GHDL + GTKWave foi testado no Ubuntu 24.04. O script do ModelSim ainda não foi rodado com o instalador de verdade; se algo falhar, o log mostra o conteúdo do pacote para ajustar.
 
 
 - Ubuntu 26.04 LTS "resolute", x86_64, glibc 2.43, 8 GB de RAM
