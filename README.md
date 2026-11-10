@@ -1,47 +1,71 @@
-# Ferramentas de FPGA no Ubuntu moderno (26.04): Quartus II 11.0, ModelSim e GHDL
+# Instalação de ferramentas de prototipação no Ubuntu
 
-Scripts para montar o ambiente de FPGA no **Ubuntu 26.04 "resolute" x86_64**, com um menu no terminal para escolher o que instalar:
+Scripts para montar, com um menu no terminal, um ambiente de prototipação de eletrônica no **Ubuntu** (testado no 26.04 "resolute" x86_64): FPGA, placas de circuito, CNC e impressão 3D.
 
-| Opção do menu | Script | O que faz |
-|---|---|---|
-| Quartus II 11.0 | `instalar_quartus11.sh` | Quartus II 11.0 Web Edition (32 bits, de 2011) + USB-Blaster |
-| GHDL + GTKWave | `instalar_ghdl_gtkwave.sh` | Simulador VHDL livre + visualizador de ondas, pelo apt |
-| ModelSim-Altera 11.0 | `instalar_modelsim11.sh` | ModelSim-Altera Starter Edition 11.0 (32 bits, sem licença) |
+```
+Menu principal
+├── FPGA
+│   ├── Quartus II 11.0 Web Edition     instalar_quartus11.sh
+│   ├── GHDL + GTKWave                  instalar_ghdl_gtkwave.sh
+│   └── ModelSim-Altera 11.0 Starter    instalar_modelsim11.sh
+├── Prototipação
+│   ├── KiCad                           instalar_kicad.sh
+│   ├── UGS (Universal Gcode Sender)    instalar_ugs.sh
+│   ├── FreeCAD                         instalar_freecad.sh
+│   ├── PrusaSlicer                     instalar_prusaslicer.sh
+│   └── Instalar os quatro
+├── Ver o que já está instalado
+└── Antes de começar
+```
 
-Eu precisava do Quartus 11.0 porque é uma das últimas versões que suporta a **Cyclone I** (tenho uma placa com a **EP1C3T144C8N**). O Quartus Prime moderno não tem mais essa família. Só que o instalador de 2011 não roda num Linux de 2026, então fui resolvendo erro por erro e juntei tudo em scripts.
+A parte de FPGA nasceu de uma necessidade: eu tenho uma placa com a **Cyclone I EP1C3T144C8N**, e o Quartus II 11.0 é uma das últimas versões que suportam essa família (o Quartus Prime moderno não tem mais). Só que o instalador de 2011 não roda num Linux de 2026, então fui resolvendo erro por erro e juntei tudo em scripts. Depois vieram as outras ferramentas que eu uso.
 
 ## Como usar
 
 ```bash
-git clone https://github.com/Vjfrib/quartus-ii-11-ubuntu.git
-cd quartus-ii-11-ubuntu
+git clone https://github.com/Vjfrib/ferramentas-prototipacao-ubuntu.git
+cd ferramentas-prototipacao-ubuntu
 bash instalar.sh
 ```
 
-Aparece um menu (whiptail) com as opções acima, mais "Ver o que já está instalado" e "Antes de começar". Cada opção roda o seu script, mostra a saída na tela e volta para o menu. Os scripts também podem ser rodados sozinhos, por exemplo `bash instalar_ghdl_gtkwave.sh`.
+Aparece um menu (whiptail) com as categorias. Cada opção roda o seu script, mostra a saída na tela e volta para o menu. Ao lado de cada ferramenta aparece se ela já está instalada. Os scripts também podem ser rodados sozinhos, por exemplo `bash instalar_kicad.sh`.
 
-Antes, baixe da Intel/Altera e deixe em `~/Downloads`:
+Só a parte da Altera precisa ser baixada antes, do site da Intel, e deixada em `~/Downloads`:
 
 - Quartus: `11.0_quartus_free_linux.sh`
 - ModelSim: o ModelSim-Altera Starter Edition 11.0 para Linux (ex.: `11.0_modelsim_ase_linux.sh`). Também serve a pasta já extraída ou um `ModelSimSetup-*.run`. Outro caminho: `MODELSIM_SRC=/caminho bash instalar_modelsim11.sh`.
 
-O GHDL e o GTKWave vêm do apt, não precisa baixar nada.
+O resto é baixado sozinho (apt, Flathub ou GitHub).
 
 Regras que valem para todos os scripts:
 
 - Não rode com `sudo` na frente. Eles pedem a senha quando precisam.
 - Podem rodar várias vezes: o que já foi feito é pulado.
 - Não rodam `apt autoremove` e não removem nenhum pacote.
-- Cada um grava um log em `~`: `quartus11-install.log`, `ghdl-gtkwave-install.log`, `modelsim11-install.log`.
+- Cada um grava um log na pasta pessoal: `~/<ferramenta>-install.log`.
 
-## Quartus II 11.0
+## Prototipação
+
+| Ferramenta | Para que serve | De onde vem |
+|---|---|---|
+| **KiCad** | Esquemático e placa de circuito impresso | apt do Ubuntu, com as bibliotecas de símbolos, footprints e templates. Os modelos 3D (vários GB) só com `KICAD_3D=1 bash instalar_kicad.sh` |
+| **UGS Platform** | Enviar G-code para CNC (GRBL e outros) | Última versão do [GitHub](https://github.com/winder/Universal-G-Code-Sender/releases), com o Java embutido, em `~/.local/opt/ugs`. Comando `ugs` e atalho no menu |
+| **FreeCAD** | Modelagem 3D paramétrica | Flathub (`org.freecad.FreeCAD`). Se o Flathub falhar, usa o apt, quando o Ubuntu tiver o pacote |
+| **PrusaSlicer** | Fatiar modelos para impressão 3D | Flathub (`com.prusa3d.PrusaSlicer`), que é como a Prusa distribui a versão atual. Se falhar, usa o `prusa-slicer` do apt (mais antigo) |
+
+Observações:
+
+- **UGS e a porta serial:** o script coloca você no grupo `dialout`, que é o que dá acesso a `/dev/ttyUSB*` e `/dev/ttyACM*`. Vale depois de sair e entrar de novo na sessão. Se a placa da CNC usa CH340 e não aparece, o culpado costuma ser o `brltty`; o script avisa, e a solução é `sudo apt remove brltty`.
+- **Apps do Flathub:** o ícone no menu de aplicativos aparece depois de sair e entrar de novo na sessão. Pelo terminal: `flatpak run org.freecad.FreeCAD` e `flatpak run com.prusa3d.PrusaSlicer`.
+
+## FPGA: Quartus II 11.0
 
 Depois é só abrir **"Quartus II 11.0 Web Edition"** no menu, ou rodar `quartus11` no terminal.
 Para ver o USB-Blaster: `quartus11 jtagconfig`.
 
 Instala em `~/altera/11.0`. Os caminhos podem ser trocados com `QUARTUS_SH=` e `QUARTUS_SRC=`.
 
-## Simulação
+## FPGA: simulação
 
 O Quartus parou de ter simulador embutido na versão 10, então a simulação fica com o GHDL ou com o ModelSim. **Os dois funcionam inteiros pela linha de comando**, sem abrir janela nenhuma.
 
@@ -156,9 +180,6 @@ Na primeira vez, o Quartus abre uma caixinha de licença / Web Edition que trava
 
 ## Ambiente testado
 
-Testado e funcionando: o Quartus abre pelo ícone do menu e responde normalmente.
-O script do GHDL + GTKWave foi testado no Ubuntu 24.04. O script do ModelSim ainda não foi rodado com o instalador de verdade; se algo falhar, o log mostra o conteúdo do pacote para ajustar.
-
-
-- Ubuntu 26.04 LTS "resolute", x86_64, glibc 2.43, 8 GB de RAM
-- Quartus II 11.0 Build 157 Web Edition (`11.0_quartus_free_linux.sh`)
+- Ubuntu 26.04 LTS "resolute", x86_64, glibc 2.43, 8 GB de RAM: o Quartus II 11.0 Build 157 Web Edition (`11.0_quartus_free_linux.sh`) abre pelo ícone do menu e responde normalmente.
+- Ubuntu 24.04: os scripts do GHDL + GTKWave, KiCad e PrusaSlicer (pelo caminho do apt) rodaram de ponta a ponta, e o menu foi testado num terminal.
+- Ainda não rodados com o download de verdade: ModelSim (precisa do instalador da Intel), UGS e os apps do Flathub. Se algo falhar, o log de cada script mostra onde parou.
