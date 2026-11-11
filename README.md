@@ -1,6 +1,6 @@
 # Instalação de ferramentas de prototipação no Ubuntu
 
-Scripts para montar, com um menu no terminal, um ambiente de prototipação de eletrônica no **Ubuntu** (testado no 26.04 "resolute" x86_64): FPGA, placas de circuito, CNC e impressão 3D.
+Scripts para montar, com um menu no terminal, um ambiente de prototipação de eletrônica no **Ubuntu** (testado no 26.04 "resolute" x86_64): FPGA, placas de circuito, simulação analógica, CAD, CNC e impressão 3D.
 
 ```
 Menu principal
@@ -13,7 +13,9 @@ Menu principal
 │   ├── UGS (Universal Gcode Sender)    instalar_ugs.sh
 │   ├── FreeCAD                         instalar_freecad.sh
 │   ├── PrusaSlicer                     instalar_prusaslicer.sh
-│   └── Instalar os quatro
+│   ├── Instalar os quatro acima
+│   ├── LTspice (via Wine)              instalar_ltspice.sh
+│   └── Fusion 360 (via Wine, teste)    instalar_fusion360.sh
 ├── Ver o que já está instalado
 └── Antes de começar
 ```
@@ -30,12 +32,29 @@ bash instalar.sh
 
 Aparece um menu (whiptail) com as categorias. Cada opção roda o seu script, mostra a saída na tela e volta para o menu. Ao lado de cada ferramenta aparece se ela já está instalada. Os scripts também podem ser rodados sozinhos, por exemplo `bash instalar_kicad.sh`.
 
-Só a parte da Altera precisa ser baixada antes, do site da Intel, e deixada em `~/Downloads`:
+Só a parte da Altera precisa ser baixada à mão, porque o site pede login (a conta é gratuita):
 
-- Quartus: `11.0_quartus_free_linux.sh`
-- ModelSim: o ModelSim-Altera Starter Edition 11.0 para Linux (ex.: `11.0_modelsim_ase_linux.sh`). Também serve a pasta já extraída ou um `ModelSimSetup-*.run`. Outro caminho: `MODELSIM_SRC=/caminho bash instalar_modelsim11.sh`.
+| O quê | Arquivo | Onde baixar |
+|---|---|---|
+| Quartus II 11.0 | `quartus_free_linux.sh` (3,2 GB; às vezes salvo como `11.0_quartus_free_linux.sh`) | [Quartus II Web Edition 11.0 para Linux](https://www.altera.com/downloads/fpga-development-tools/quartus-ii-web-edition-design-software-version-11-0-b123-linux) |
+| ModelSim-Altera Starter | `ModelSimSetup-13.0.1.232.run` (776 MB) | [página do Quartus II 13.0sp1 para Linux](https://www.altera.com/downloads/fpga-development-tools/quartus-ii-web-edition-design-software-version-13-0sp1-linux), item "ModelSim-Altera Edition (includes Starter Edition)" |
 
-O resto é baixado sozinho (apt, Flathub ou GitHub).
+**Não precisa baixar antes.** Se o arquivo não estiver em `~/Downloads`, o script para, mostra o link oficial e espera:
+
+```
+  Falta o instalador: Quartus II 11.0 Web Edition para Linux
+  Baixe no site oficial (abra o link no navegador):
+      https://www.altera.com/downloads/...
+  [Enter] já baixei, procurar de novo   [a] abrir o link   [s] sair
+  ...ou cole/arraste aqui o arquivo e aperte Enter.
+  >
+```
+
+Aperte `a` para abrir o link no navegador, baixe, e aperte Enter (se o download ainda estiver em andamento, ele avisa). Se o arquivo estiver em outra pasta, arraste ele para o terminal ou cole o caminho. Também dá para indicar antes: `QUARTUS_SH=/caminho/arquivo.sh`, `QUARTUS_SRC=/pasta/extraída` ou `MODELSIM_SRC=/caminho`.
+
+Sobre o ModelSim: a página do 11.0 só tem o pacote completo do Quartus, que pode trazer o ModelSim dentro (o script procura lá também, depois que o Quartus é extraído). O ModelSim avulso mais próximo que a Altera ainda oferece é o do 13.0sp1 (ModelSim 10.1d), que o script também aceita. Para simular VHDL/Verilog dá na mesma; ele só não traz as bibliotecas de simulação pós-síntese da Cyclone I.
+
+O resto é baixado sozinho (apt, Flathub, GitHub ou o site oficial de cada programa).
 
 Regras que valem para todos os scripts:
 
@@ -52,11 +71,60 @@ Regras que valem para todos os scripts:
 | **UGS Platform** | Enviar G-code para CNC (GRBL e outros) | Última versão do [GitHub](https://github.com/winder/Universal-G-Code-Sender/releases), com o Java embutido, em `~/.local/opt/ugs`. Comando `ugs` e atalho no menu |
 | **FreeCAD** | Modelagem 3D paramétrica | Flathub (`org.freecad.FreeCAD`). Se o Flathub falhar, usa o apt, quando o Ubuntu tiver o pacote |
 | **PrusaSlicer** | Fatiar modelos para impressão 3D | Flathub (`com.prusa3d.PrusaSlicer`), que é como a Prusa distribui a versão atual. Se falhar, usa o `prusa-slicer` do apt (mais antigo) |
+| **LTspice** | Simulação de circuitos (SPICE) | Site da Analog Devices, rodando pelo Wine. Veja [abaixo](#ltspice) |
+| **Fusion 360** | CAD/CAM 3D | Instalador oficial da Autodesk pelo Wine. **Experimental**, veja [abaixo](#fusion-360-experimental) |
 
 Observações:
 
 - **UGS e a porta serial:** o script coloca você no grupo `dialout`, que é o que dá acesso a `/dev/ttyUSB*` e `/dev/ttyACM*`. Vale depois de sair e entrar de novo na sessão. Se a placa da CNC usa CH340 e não aparece, o culpado costuma ser o `brltty`; o script avisa, e a solução é `sudo apt remove brltty`.
 - **Apps do Flathub:** o ícone no menu de aplicativos aparece depois de sair e entrar de novo na sessão. Pelo terminal: `flatpak run org.freecad.FreeCAD` e `flatpak run com.prusa3d.PrusaSlicer`.
+
+## Programas de Windows pelo Wine
+
+Os dois usam o **Wine do apt do Ubuntu** (não adicionam o repositório da WineHQ e não trocam nem removem pacotes), e cada um fica num prefixo só dele, então um não estraga o outro. Os dois saem com `--remover`, que apaga só o que o script criou.
+
+### LTspice
+
+Simulador SPICE da Analog Devices, bom para circuitos analógicos e fontes chaveadas.
+
+```bash
+bash instalar_ltspice.sh            # ou pelo menu: Prototipação > LTspice
+ltspice                             # abre
+ltspice meu_circuito.asc            # abre um arquivo
+bash instalar_ltspice.sh --remover  # remove
+```
+
+- Baixa o `LTspice64.msi` direto da Analog Devices. Se já tiver um `LTspice*.msi` em `~/Downloads`, usa esse. Se o download falhar, mostra a [página oficial](https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html) e espera, como nos instaladores da Altera.
+- Prefixo: `~/.local/share/wineprefixes/ltspice`. Cria o comando `ltspice` (em `~/.local/bin`) e o atalho "LTspice" no menu, com o ícone tirado do próprio `.exe`.
+- No final roda uma simulação de teste (um RC) em modo batch, sem abrir janela.
+- Na primeira vez que abre, o LTspice baixa a biblioteca de componentes; demora um pouco.
+
+### Fusion 360 (experimental)
+
+**Resumo honesto: dá para instalar, mas não é confiável.** O Fusion não tem versão para Linux e a Autodesk não dá suporte a ele no Wine. O que existe é o trabalho da comunidade, principalmente o projeto [cryinkfly/Autodesk-Fusion-360-on-Linux](https://codeberg.org/cryinkfly/Autodesk-Fusion-360-on-Linux) (o repositório antigo no GitHub foi arquivado em fev/2026 e o projeto foi para o Codeberg). O meu script segue os mesmos passos dele, com duas diferenças importantes:
+
+- O script original troca o Wine do sistema pelo da WineHQ e, no caminho, roda `apt-get remove wine* --purge` e `apt-get autoremove`. Isso apagaria o Wine do LTspice e outros pacotes. O meu usa o Wine que já está no Ubuntu (precisa ser 9.8 ou mais novo) e não remove nada.
+- O original não reconhece o Ubuntu 26.04 (a lista dele vai até o 25.04) e para com erro. O meu não depende dessa lista.
+
+```bash
+bash instalar_fusion360.sh             # pergunta antes de começar
+FUSION_GPU=opengl bash instalar_fusion360.sh   # força OpenGL em vez de DXVK
+fusion360                               # abre
+bash instalar_fusion360.sh --remover    # remove tudo
+```
+
+O que ele faz: cria um prefixo em `~/.local/share/fusion360-wine`, instala com o winetricks os componentes que o Fusion pede (.NET 4.5.2, Visual C++ 2017, MSXML, fontes, GDI+, DXVK se houver Vulkan), baixa o instalador oficial da Autodesk, troca duas DLLs por versões corrigidas pela comunidade (a `Qt6WebEngineCore.dll`, que faz o login e os painéis web funcionarem, e a `siappdll.dll`, do SpaceMouse; as originais ficam como `.bak`), e registra o `adskidmgr://` para o login no navegador voltar para o Fusion.
+
+Os limites, para saber antes:
+
+- **Atualizações:** o Fusion se atualiza sozinho ao abrir, e uma atualização pode quebrar o que funcionava. O comando `fusion360` sempre procura a versão mais nova.
+- **Login:** é o ponto que mais falha. Depois de entrar no navegador, aceite abrir o link no "Autodesk Fusion - login". Se não voltar, tente de novo ou veja a [issue #460](https://github.com/cryinkfly/Autodesk-Fusion-360-for-Linux/issues/460).
+- **Vídeo:** precisa de OpenGL 3.3+ ou Vulkan. Em vídeo integrado funciona, mas fica lento em modelos grandes. Se a área de desenho ficar preta ou piscando: Preferências > Geral > Gráficos > OpenGL.
+- **Painéis web** (Data Panel, extensões, renderização na nuvem) são os que mais dão problema.
+- **Tamanho:** baixa uns 3 a 4 GB e leva de 30 min a 1 h; o script exige 15 GB livres.
+- As DLLs corrigidas vêm do repositório da comunidade, não da Autodesk.
+
+Se o objetivo é só ter um CAD 3D no Linux, o caminho confiável é o **FreeCAD** (já está no menu) ou o **Onshape**, que roda no navegador e tem plano gratuito. O Fusion pelo Wine vale como tentativa, e se não der, a alternativa é uma máquina virtual com Windows ou dual boot.
 
 ## FPGA: Quartus II 11.0
 
@@ -182,4 +250,5 @@ Na primeira vez, o Quartus abre uma caixinha de licença / Web Edition que trava
 
 - Ubuntu 26.04 LTS "resolute", x86_64, glibc 2.43, 8 GB de RAM: o Quartus II 11.0 Build 157 Web Edition (`11.0_quartus_free_linux.sh`) abre pelo ícone do menu e responde normalmente.
 - Ubuntu 24.04: os scripts do GHDL + GTKWave, KiCad e PrusaSlicer (pelo caminho do apt) rodaram de ponta a ponta, e o menu foi testado num terminal.
-- Ainda não rodados com o download de verdade: ModelSim (precisa do instalador da Intel), UGS e os apps do Flathub. Se algo falhar, o log de cada script mostra onde parou.
+- Ainda não rodados com o download de verdade: ModelSim (precisa do instalador da Altera), UGS, os apps do Flathub, LTspice e Fusion 360. Se algo falhar, o log de cada script mostra onde parou (`~/ltspice-install.log`, `~/fusion360-install.log` etc.).
+- A espera pelo download (link + Enter / caminho colado) foi testada num terminal com o Quartus e o ModelSim.
