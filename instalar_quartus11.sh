@@ -13,8 +13,11 @@
 set -u
 
 # ----------------------------- configuração ---------------------------------
-SH_FILE="${QUARTUS_SH:-$HOME/Downloads/11.0_quartus_free_linux.sh}"
-SRC_DIR="${QUARTUS_SRC:-$HOME/Downloads/11.0_quartus_free_linux}"
+. "$(dirname "${BASH_SOURCE[0]}")/comum.sh"   # esperar_download, pasta_downloads
+DL="$(pasta_downloads)"
+SH_FILE="${QUARTUS_SH:-}"     # o .sh baixado (quartus_free_linux.sh / 11.0_quartus_free_linux.sh)
+SRC_DIR="${QUARTUS_SRC:-}"    # a pasta já extraída (a que tem altera_installer/)
+LINK_QUARTUS="https://www.altera.com/downloads/fpga-development-tools/quartus-ii-web-edition-design-software-version-11-0-b123-linux"
 DEST="$HOME/altera/11.0"
 COMPAT="$DEST/compat-lib32"
 LOG="$HOME/quartus11-install.log"
@@ -50,15 +53,51 @@ step "Verificando o ambiente"
 command -v apt-get >/dev/null || die "apt-get não encontrado; este script é para Ubuntu/Debian."
 command -v python3 >/dev/null || die "python3 não encontrado (vem por padrão no Ubuntu). Instale com: sudo apt install python3"
 
-if [ ! -d "$SRC_DIR/altera_installer" ]; then
-    if [ -f "$SH_FILE" ]; then
-        warn "Pasta extraída não encontrada; extraindo $SH_FILE (demora ~2 min)..."
-        chmod +x "$SH_FILE"
-        ( cd "$(dirname "$SH_FILE")" && "$SH_FILE" --noexec --keep ) || die "Falha ao extrair $SH_FILE"
+# Pasta extraída do Quartus (a que tem altera_installer/) dentro de <pasta>, ou vazio.
+pasta_extraida() {
+    local a
+    while IFS= read -r a; do
+        case "$a" in *[Qq]uartus*) dirname "$a"; return ;; esac
+    done < <(find "$1" -maxdepth 2 -type d -name altera_installer 2>/dev/null | sort)
+}
+# O que serve como instalador: a pasta extraída ou o .sh baixado.
+achar_quartus() {
+    local d
+    d="$(pasta_extraida "$DL")"
+    [ -n "$d" ] && { echo "$d"; return; }
+    find "$DL" -maxdepth 1 -type f -iname '*quartus*free*linux*.sh' 2>/dev/null | sort | head -1
+}
+
+if [ -z "$SRC_DIR" ] || [ ! -d "$SRC_DIR/altera_installer" ]; then
+    if [ -n "$SH_FILE" ] && [ -f "$SH_FILE" ]; then
+        ACHADO="$SH_FILE"
+    else
+        esperar_download "Quartus II 11.0 Web Edition para Linux" "$LINK_QUARTUS" \
+            "quartus_free_linux.sh (3,2 GB; às vezes vem como 11.0_quartus_free_linux.sh)" achar_quartus \
+            "Precisa de uma conta gratuita no site da Altera (o link pede login).
+Não precisa dar permissão de execução nem extrair: o script faz isso." \
+            || die "Sem o instalador do Quartus não dá para continuar. Baixe em:
+    $LINK_QUARTUS
+    e rode de novo (ou: QUARTUS_SH=/caminho/do/arquivo.sh bash $0)."
+    fi
+    if [ -d "$ACHADO" ]; then
+        SRC_DIR="$ACHADO"
+        [ -d "$SRC_DIR/altera_installer" ] || SRC_DIR="$(pasta_extraida "$ACHADO")"
+    else
+        SH_FILE="$ACHADO"
+        SRC_DIR="$(pasta_extraida "$(dirname "$SH_FILE")")"
+        if [ -z "$SRC_DIR" ]; then
+            warn "Pasta extraída não encontrada; extraindo $SH_FILE (demora ~2 min)..."
+            chmod +x "$SH_FILE"
+            ( cd "$(dirname "$SH_FILE")" && "$SH_FILE" --noexec --keep ) || die "Falha ao extrair $SH_FILE.
+    Se apareceu 'corrupted' ou 'checksum', o download veio incompleto: baixe de novo."
+            SRC_DIR="$(pasta_extraida "$(dirname "$SH_FILE")")"
+        fi
     fi
 fi
-[ -d "$SRC_DIR/altera_installer" ] || die "Não achei $SRC_DIR/altera_installer. Extraia antes com:
-    cd ~/Downloads && ./11.0_quartus_free_linux.sh --noexec --keep"
+[ -n "$SRC_DIR" ] && [ -d "$SRC_DIR/altera_installer" ] || die "Não achei a pasta altera_installer depois de extrair.
+    Extraia à mão:  cd $DL && bash ./quartus_free_linux.sh --noexec --keep
+    e rode de novo (ou: QUARTUS_SRC=/caminho/da/pasta bash $0)."
 ok "Instalador extraído em $SRC_DIR"
 ok "Destino: $DEST"
 

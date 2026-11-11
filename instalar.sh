@@ -12,6 +12,8 @@
 #      UGS (Universal Gcode Sender)   -> instalar_ugs.sh
 #      FreeCAD                        -> instalar_freecad.sh
 #      PrusaSlicer                    -> instalar_prusaslicer.sh
+#      LTspice (Wine)                 -> instalar_ltspice.sh
+#      Fusion 360 (Wine, experimental)-> instalar_fusion360.sh
 #
 #  Uso:   bash instalar.sh
 #  Usa o whiptail (já vem no Ubuntu). Sem ele, usa o dialog ou um menu de texto.
@@ -48,6 +50,8 @@ st_kicad()    { sim tem kicad; }
 st_ugs()      { sim test -x "$HOME/.local/opt/ugs/bin/ugsplatform"; }
 st_freecad()  { if tem freecad || tem_flatpak org.freecad.FreeCAD; then echo "instalado"; else echo "-"; fi; }
 st_prusa()    { if tem prusa-slicer || tem_flatpak com.prusa3d.PrusaSlicer; then echo "instalado"; else echo "-"; fi; }
+st_ltspice()  { sim test -x "$HOME/.local/bin/ltspice"; }
+st_fusion()   { sim test -f "$HOME/.local/share/fusion360-wine/.instalado"; }
 
 # ----------------------------- telas ----------------------------------------
 rodar() {   # rodar <script> <nome>
@@ -90,20 +94,25 @@ Prototipação
   UGS (Universal Gcode Sender) . $(st_ugs)
   FreeCAD ...................... $(st_freecad)
   PrusaSlicer .................. $(st_prusa)
+  LTspice (Wine) ............... $(st_ltspice)
+  Fusion 360 (Wine) ............ $(st_fusion)
 
-Os logs ficam na sua pasta pessoal (~/*-install.log)." 20
+Os logs ficam na sua pasta pessoal (~/*-install.log)." 22
 }
 
 ajuda() {
-    caixa "Antes de começar" "Quase tudo é baixado sozinho (apt, Flathub ou GitHub).
-Só a parte da Altera precisa ser baixada antes, do site da Intel,
-e deixada em ~/Downloads:
+    caixa "Antes de começar" "Quase tudo é baixado sozinho (apt, Flathub, GitHub, sites
+oficiais). Só a parte da Altera precisa ser baixada à mão (pede login
+gratuito no altera.com):
 
- - Quartus:  11.0_quartus_free_linux.sh
- - ModelSim: 11.0_modelsim_ase_linux.sh  (ModelSim-Altera Starter)
+ - Quartus:  quartus_free_linux.sh  (11.0, 3,2 GB)
+ - ModelSim: ModelSimSetup-13.0.1.232.run  (ou o que vem no pacote 11.0)
+
+Se o arquivo não estiver em ~/Downloads, o script mostra o link e
+espera você baixar: aperte Enter quando terminar, ou cole o caminho.
 
 Os scripts pedem a senha do sudo quando precisam, podem ser
-rodados de novo sem problema e não removem nenhum pacote." 16
+rodados de novo sem problema e não removem nenhum pacote." 20
 }
 
 menu_fpga() {
@@ -129,7 +138,9 @@ menu_proto() {
             2 "UGS - Universal Gcode Sender   [$(st_ugs)]" \
             3 "FreeCAD (modelagem 3D)         [$(st_freecad)]" \
             4 "PrusaSlicer (impressão 3D)     [$(st_prusa)]" \
-            5 "Instalar os quatro" \
+            5 "Instalar os quatro acima" \
+            6 "LTspice (simulação, Wine)      [$(st_ltspice)]" \
+            7 "Fusion 360 (CAD, Wine) - teste [$(st_fusion)]" \
             0 "Voltar"
         case "$ESC" in
             1) rodar instalar_kicad.sh       "KiCad" ;;
@@ -141,6 +152,8 @@ menu_proto() {
                    echo "=== $s ==="; bash "$DIR/instalar_$s.sh" || echo ">>> $s terminou com erro."
                done
                read -r -p "Pressione Enter para voltar ao menu... " _ ;;
+            6) rodar instalar_ltspice.sh     "LTspice (Wine)" ;;
+            7) rodar instalar_fusion360.sh   "Fusion 360 (Wine, experimental)" ;;
             0|"") return ;;
         esac
     done
@@ -149,7 +162,7 @@ menu_proto() {
 while true; do
     escolher "$TITULO" "Escolha uma categoria:" \
         1 "FPGA  (Quartus, GHDL/GTKWave, ModelSim)" \
-        2 "Prototipação  (KiCad, UGS, FreeCAD, PrusaSlicer)" \
+        2 "Prototipação  (KiCad, UGS, FreeCAD, PrusaSlicer, LTspice, Fusion)" \
         3 "Ver o que já está instalado" \
         4 "Antes de começar (o que baixar)" \
         0 "Sair"
