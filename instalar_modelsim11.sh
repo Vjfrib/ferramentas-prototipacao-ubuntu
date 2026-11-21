@@ -190,9 +190,10 @@ if [ -z "$MS" ]; then
         *.run)
             # Instalador BitRock (versões 12+). Tem modo sem perguntas.
             chmod +x "$SRC"
-            "$SRC" --mode unattended --accept_eula 1 --installdir "$DEST" \
+            # (o ModelSimSetup-13.1 não aceita --accept_eula; ver "$SRC --help")
+            echo "  Rodando o instalador sem perguntas (leva alguns minutos)..."
+            "$SRC" --mode unattended --unattendedmodeui minimal --installdir "$DEST" \
                 --modelsim_edition modelsim_ase \
-                || "$SRC" --mode unattended --installdir "$DEST" \
                 || warn "o instalador .run terminou com erro"
             ;;
         *.sh)
