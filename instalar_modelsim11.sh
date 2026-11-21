@@ -5,8 +5,9 @@
 #  Ubuntu 26.04 x86_64, ao lado do Quartus II 11.0 em ~/altera/11.0.
 #
 #  Uso:   bash instalar_modelsim11.sh
-#  Coloque antes em ~/Downloads o instalador baixado da Altera/Intel, por exemplo
-#  11.0_modelsim_ase_linux.sh (ou a pasta já extraída, ou um ModelSimSetup-*.run).
+#  Coloque antes em ~/Downloads o instalador baixado da Altera: o
+#  ModelSimSetup-13.1.0.162.run (o 11.0 para Linux saiu do site; o 13.1 funciona
+#  com o Quartus 11.0). Também serve um *_modelsim_ase_linux.sh antigo ou a pasta extraída.
 #  Outro caminho:  MODELSIM_SRC=/caminho/do/instalador bash instalar_modelsim11.sh
 #
 #  Pode rodar quantas vezes quiser: o que já foi feito é pulado.
@@ -75,8 +76,9 @@ else
         [ -n "$SRC" ] || SRC="$(find "$DL" -maxdepth 4 -type f -iname '*modelsim*.gz' 2>/dev/null | head -1 | xargs -r dirname)"
     fi
     [ -n "$SRC" ] && [ -e "$SRC" ] || die "Não achei o instalador do ModelSim em $DL.
-    Baixe o ModelSim-Altera Starter Edition 11.0 para Linux no site da Intel/Altera
-    (arquivo 11.0_modelsim_ase_linux.sh ou parecido), coloque em $DL e rode de novo.
+    Baixe o ModelSimSetup-13.1.0.162.run (ModelSim-Altera Starter, 818 MB) em
+    https://www.altera.com/downloads/fpga-development-tools/quartus-ii-web-edition-design-software-version-13-1-linux
+    (aba Individual Files; precisa de conta gratuita da Altera), coloque em $DL e rode de novo.
     Ou indique o caminho:  MODELSIM_SRC=/caminho/do/arquivo bash $0"
     ok "Instalador: $SRC"
 fi
@@ -188,9 +190,10 @@ if [ -z "$MS" ]; then
         *.run)
             # Instalador BitRock (versões 12+). Tem modo sem perguntas.
             chmod +x "$SRC"
-            "$SRC" --mode unattended --accept_eula 1 --installdir "$DEST" \
+            # (o ModelSimSetup-13.1 não aceita --accept_eula; ver "$SRC --help")
+            echo "  Rodando o instalador sem perguntas (leva alguns minutos)..."
+            "$SRC" --mode unattended --unattendedmodeui minimal --installdir "$DEST" \
                 --modelsim_edition modelsim_ase \
-                || "$SRC" --mode unattended --installdir "$DEST" \
                 || warn "o instalador .run terminou com erro"
             ;;
         *.sh)
@@ -316,13 +319,17 @@ export GLIBC_TUNABLES="glibc.rtld.execstack=2"
 export LD_LIBRARY_PATH="$COMPAT\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
 export FONTCONFIG_FILE="$COMPAT/fonts.conf"
 export LC_NUMERIC=C
+# Sem argumentos e sem terminal (aberto pelo menu), o vsim entra no modo texto,
+# lê o fim da entrada e fecha. Nesse caso, força a janela.
+if [ "$t" = vsim ] && [ \$# -eq 0 ]; then set -- -gui; fi
 exec "$MS/$VCODIR/$t" "\$@"
 EOF
     chmod +x "$WRAP/$t"; n=$((n+1))
 done
 [ "$n" -gt 0 ] || die "nenhum executável encontrado em $MS/$VCODIR"
 # Atalho principal: modelsim11 (abre a interface) e links no PATH
-ln -sfn "$WRAP/vsim" "$WRAP/modelsim11"
+printf '#!/usr/bin/env bash\nexec "%s/vsim" -gui "$@"\n' "$WRAP" > "$WRAP/modelsim11"
+chmod +x "$WRAP/modelsim11"
 mkdir -p "$HOME/.local/bin"
 for t in "$WRAP"/*; do ln -sfn "$t" "$HOME/.local/bin/$(basename "$t")"; done
 ok "$n comandos em $WRAP (também em ~/.local/bin)"
@@ -334,7 +341,7 @@ cat > "$DESKTOP" <<EOF
 Type=Application
 Name=ModelSim-Altera 11.0
 Comment=Simulador VHDL/Verilog (Starter Edition)
-Exec=$WRAP/vsim
+Exec=$WRAP/vsim -gui
 Path=$HOME
 Icon=${ICON:-applications-science}
 Terminal=false

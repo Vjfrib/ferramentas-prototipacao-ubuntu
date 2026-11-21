@@ -100,7 +100,8 @@ Só a parte da Altera precisa ser baixada antes, do site da Intel,
 e deixada em ~/Downloads:
 
  - Quartus:  11.0_quartus_free_linux.sh
- - ModelSim: 11.0_modelsim_ase_linux.sh  (ModelSim-Altera Starter)
+ - ModelSim: ModelSimSetup-13.1.0.162.run  (ModelSim-Altera Starter;
+             página do Quartus II 13.1 Linux, aba Individual Files)
 
 Os scripts pedem a senha do sudo quando precisam, podem ser
 rodados de novo sem problema e não removem nenhum pacote." 16
