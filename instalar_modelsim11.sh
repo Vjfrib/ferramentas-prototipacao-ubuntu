@@ -17,8 +17,10 @@
 set -u
 
 # ----------------------------- configuração ---------------------------------
-DL="$(xdg-user-dir DOWNLOAD 2>/dev/null || true)"
-[ -d "$DL" ] || DL="$HOME/Downloads"
+. "$(dirname "${BASH_SOURCE[0]}")/comum.sh"   # esperar_download, pasta_downloads
+DL="$(pasta_downloads)"
+LINK_Q11="https://www.altera.com/downloads/fpga-development-tools/quartus-ii-web-edition-design-software-version-11-0-b123-linux"
+LINK_MS13="https://www.altera.com/downloads/fpga-development-tools/quartus-ii-web-edition-design-software-version-13-0sp1-linux"
 SRC="${MODELSIM_SRC:-}"
 DEST="$HOME/altera/11.0"
 LOG="$HOME/modelsim11-install.log"
@@ -55,6 +57,17 @@ find_vcodir() {
     done
 }
 
+# Procura o instalador do ModelSim, nesta ordem: pasta já extraída, .sh (makeself),
+# .run (instalador novo) e, por último, o ModelSim que vem dentro do pacote do Quartus.
+achar_modelsim() {
+    local f
+    f="$(find "$DL" -maxdepth 1 -type d -iname '*modelsim*linux*' 2>/dev/null | sort | head -1)"
+    [ -n "$f" ] || f="$(find "$DL" -maxdepth 1 -type f -iname '*modelsim*linux*.sh' 2>/dev/null | sort | head -1)"
+    [ -n "$f" ] || f="$(find "$DL" -maxdepth 1 -type f -iname 'ModelSimSetup-*.run' 2>/dev/null | sort | tail -1)"
+    [ -n "$f" ] || f="$(find "$DL" -maxdepth 4 -type f -iname '*modelsim*.gz' 2>/dev/null | head -1 | xargs -r -d '\n' dirname)"
+    echo "$f"
+}
+
 # ----------------------------- 1. verificações ------------------------------
 step "1/6  Verificando o ambiente"
 [ "$(id -u)" -ne 0 ] || die "Não rode com sudo. Rode como usuário normal: bash $0  (o script pede a senha quando precisar)."
@@ -67,17 +80,22 @@ if [ -n "$MS" ]; then
     ok "ModelSim já extraído em $MS (a instalação dos arquivos será pulada)"
 else
     if [ -z "$SRC" ]; then
-        # Procura, nesta ordem: pasta já extraída, .sh (makeself), .run (instalador novo)
-        SRC="$(find "$DL" -maxdepth 1 -type d -iname '*modelsim*linux*' 2>/dev/null | sort | head -1)"
-        [ -n "$SRC" ] || SRC="$(find "$DL" -maxdepth 1 -type f -iname '*modelsim*linux*.sh' 2>/dev/null | sort | head -1)"
-        [ -n "$SRC" ] || SRC="$(find "$DL" -maxdepth 1 -type f -iname 'ModelSimSetup-*.run' 2>/dev/null | sort | head -1)"
-        # O pacote completo do Quartus às vezes já traz o ModelSim junto
-        [ -n "$SRC" ] || SRC="$(find "$DL" -maxdepth 4 -type f -iname '*modelsim*.gz' 2>/dev/null | head -1 | xargs -r dirname)"
+        esperar_download "ModelSim-Altera Starter (Linux)" "$LINK_MS13" \
+            "ModelSimSetup-13.0.1.232.run (776 MB, item 'ModelSim-Altera Edition (includes Starter Edition)')" \
+            achar_modelsim \
+            "Precisa de uma conta gratuita no site da Altera (o link pede login).
+A página do 11.0 só tem o pacote completo (quartus_free_linux.sh, 3,2 GB), que pode
+trazer o ModelSim dentro: se você já tem esse arquivo, rode antes o instalador do
+Quartus (ele extrai o pacote) e aperte Enter aqui. Página do 11.0:
+    $LINK_Q11
+O ModelSim 13.0 (10.1d) simula VHDL/Verilog do mesmo jeito; ele só não traz as
+bibliotecas de simulação pós-síntese da Cyclone I." \
+            || die "Sem o instalador do ModelSim não dá para continuar. Baixe em:
+    $LINK_MS13
+    e rode de novo (ou: MODELSIM_SRC=/caminho/do/arquivo bash $0)."
+        SRC="$ACHADO"
     fi
-    [ -n "$SRC" ] && [ -e "$SRC" ] || die "Não achei o instalador do ModelSim em $DL.
-    Baixe o ModelSim-Altera Starter Edition 11.0 para Linux no site da Intel/Altera
-    (arquivo 11.0_modelsim_ase_linux.sh ou parecido), coloque em $DL e rode de novo.
-    Ou indique o caminho:  MODELSIM_SRC=/caminho/do/arquivo bash $0"
+    [ -e "$SRC" ] || die "Não existe: $SRC"
     ok "Instalador: $SRC"
 fi
 ok "Destino: $DEST"
