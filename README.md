@@ -97,7 +97,10 @@ bash instalar_ltspice.sh --remover  # remove
 - Baixa o `LTspice64.msi` direto da Analog Devices. Se já tiver um `LTspice*.msi` em `~/Downloads`, usa esse. Se o download falhar, mostra a [página oficial](https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html) e espera, como nos instaladores da Altera.
 - Prefixo: `~/.local/share/wineprefixes/ltspice`. Cria o comando `ltspice` (em `~/.local/bin`) e o atalho "LTspice" no menu, com o ícone tirado do próprio `.exe`.
 - No final roda uma simulação de teste (um RC) em modo batch, sem abrir janela.
-- Na primeira vez que abre, o LTspice baixa a biblioteca de componentes; demora um pouco.
+- Já deixa respondidas as duas perguntas da primeira execução, que travariam o modo batch: "Anonymously Share Usage Data" fica em **não enviar**, e os atalhos de teclado ficam os novos padrões (copiados em `ltspice_atalhos.ini`). Só faz isso numa instalação nova, sem `LTspice.ini`; não mexe nas suas configurações.
+- Na primeira vez que abre, o LTspice baixa a biblioteca de componentes ("Web Sync" / "Field Update Utility"); demora um pouco.
+- Testado no Ubuntu 26.04 com o Wine 10.0 do apt (`sudo apt-get install wine wine64 icoutils`) e o LTspice 26.1.1: a janela abre e a simulação de teste roda em ~4 s.
+- `bash instalar_ltspice.sh --baixar` baixa o instalador de novo (para pegar uma versão mais nova); sem isso ele reaproveita o que está em `~/.cache/ltspice`.
 
 ### Fusion 360 (experimental)
 

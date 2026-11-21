@@ -14,7 +14,7 @@
 set -u
 . "$(dirname "${BASH_SOURCE[0]}")/comum.sh"
 
-PFX="$HOME/.local/share/wineprefixes/ltspice"
+PFX="${LTSPICE_PREFIX:-$HOME/.local/share/wineprefixes/ltspice}"
 BIN="$HOME/.local/bin/ltspice"
 DESKTOP="$HOME/.local/share/applications/ltspice.desktop"
 ICONE="$HOME/.local/share/icons/hicolor/256x256/apps/ltspice.png"
@@ -87,6 +87,23 @@ wineserver -w
 EXE="$(achar_exe)"
 [ -n "$EXE" ] || die "não achei o LTspice.exe dentro de $PFX depois da instalação."
 ok "LTspice instalado: ${EXE#"$PFX/"}"
+
+# Responde de antemão as perguntas da primeira execução, que travam o modo
+# batch: "Anonymously Share Usage Data" (fica em Não) e "New Keyboard
+# Shortcuts" (aparece se o LTspice.ini não tiver as seções de atalhos, que
+# ficam em ltspice_atalhos.ini).
+# Só mexe se o LTspice.ini ainda não existir.
+INI="$(find "$PFX/drive_c/users" -maxdepth 3 -type d -path '*/AppData/Roaming' 2>/dev/null | head -1)/LTspice.ini"
+VER="$(find "$PFX/drive_c/users" -iname 'Uninstall LTspice *.lnk' 2>/dev/null | head -1 \
+       | sed -E 's/.*LTspice ([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
+if [ ! -e "$INI" ] && [ -n "$VER" ] && [ "${INI%/LTspice.ini}" != "" ]; then
+    {
+        printf '[Options]\r\nCaptureAnalytics=false\r\nLastRunVersion=%s\r\nHighestRunVersion=%s\r\n' "$VER" "$VER"
+        # os atalhos novos (padrão do LTspice 26); sem eles ele pergunta
+        sed 's/$/\r/' "$(dirname "${BASH_SOURCE[0]}")/ltspice_atalhos.ini" 2>/dev/null
+    } > "$INI"
+    ok "primeira execução configurada (sem envio de dados de uso; atalhos novos)"
+fi
 
 step "4/4  Comando 'ltspice' e atalho no menu"
 mkdir -p "$(dirname "$BIN")" "$(dirname "$DESKTOP")"
