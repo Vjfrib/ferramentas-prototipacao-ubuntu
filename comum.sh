@@ -140,6 +140,19 @@ wine_instalar() {
     ok "$(wine --version 2>/dev/null)"
 }
 
+# wineserver: no Ubuntu ele não fica no PATH (vai em /usr/lib/<arch>/wine/).
+# Esta função acha o binário, para os scripts poderem chamar "wineserver -w".
+if ! command -v wineserver >/dev/null 2>&1; then
+    wineserver() {
+        local w
+        for w in /usr/lib/wine/wineserver /usr/lib/*-linux-gnu/wine/wineserver \
+                 /usr/lib/wine/wineserver64 /opt/wine-*/bin/wineserver; do
+            [ -x "$w" ] && { "$w" "$@"; return; }
+        done
+        return 0
+    }
+fi
+
 # wine_versao_ok <maior> <menor>: o Wine instalado é pelo menos essa versão?
 wine_versao_ok() {
     local v M m

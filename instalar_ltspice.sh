@@ -3,6 +3,7 @@
 #  instalar_ltspice.sh  -  LTspice (Analog Devices) pelo Wine
 #
 #  Uso:   bash instalar_ltspice.sh            instala (ou atualiza)
+#         bash instalar_ltspice.sh --baixar   idem, baixando o instalador de novo
 #         bash instalar_ltspice.sh --remover  apaga o LTspice e o prefixo do Wine
 #
 #  Usa o Wine do apt do Ubuntu, num prefixo só dele (~/.local/share/wineprefixes/ltspice),
@@ -41,6 +42,9 @@ step "2/4  Instalador do LTspice"
 MSI="$(achar_msi)"
 if [ -n "$MSI" ]; then
     ok "usando o que já está em Downloads: $MSI"
+elif [ -s "$HOME/.cache/ltspice/LTspice64.msi" ] && [ "${1:-}" != "--baixar" ]; then
+    MSI="$HOME/.cache/ltspice/LTspice64.msi"
+    ok "usando o baixado antes: $MSI  (para baixar a versão mais nova: --baixar)"
 else
     MSI="$HOME/.cache/ltspice/LTspice64.msi"
     mkdir -p "$(dirname "$MSI")"
@@ -60,6 +64,7 @@ fi
 step "3/4  Instalando no prefixo do Wine ($PFX)"
 if [ ! -d "$PFX/drive_c" ]; then
     echo "  Criando o prefixo (primeira vez demora ~1 min)..."
+    mkdir -p "$(dirname "$PFX")"   # o Wine só cria a última pasta do caminho
     # sem Mono/Gecko: o LTspice não usa .NET nem o navegador do Wine
     WINEDLLOVERRIDES="mscoree,mshtml=" wineboot -i >/dev/null 2>&1 || true
     wineserver -w
