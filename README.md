@@ -176,7 +176,7 @@ Na primeira vez, o Quartus abre uma caixinha de licença / Web Edition que trava
 
 ## Pendente
 
-- [ ] **Arquivos de dispositivo (Cyclone I etc.):** o `devinfo.gz` não criou as famílias em `common/devinfo`, e os arquivos `devices/subscription/*.qda` estão num formato próprio. Ainda estou investigando.
+- [x] **Arquivos de dispositivo (Cyclone I):** os `devices/subscription/*.qda` são instalados pelo próprio Quartus com `quartus_sh --qinstall -qda cyclone.qda` (o comando que o `quartus_free.xml` da Altera usa). O script já faz isso e confere se a EP1C3T144C8 aparece no `get_part_list`.
 
 ## Ambiente testado
 

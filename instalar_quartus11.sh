@@ -456,15 +456,28 @@ else
     echo "$out" | tail -25 | sed 's/^/    /'
     die "quartus_sh --version falhou (saída acima). A instalação está em $DEST; o problema é de execução."
 fi
+# Os arquivos de dispositivo vêm em devices/subscription/*.qda e não são tar:
+# quem instala é o próprio Quartus (é o comando que o quartus_free.xml manda
+# rodar para cada família). Instalamos só a Cyclone I, que é a da placa.
+# Para outra família: quartus11 quartus_sh --qinstall -qda <arquivo>.qda
+if [ ! -d "$QROOT/common/devinfo/cyclone" ]; then
+    QDA="$(find "$SRC_DIR" -maxdepth 3 -name cyclone.qda | head -1)"
+    if [ -n "$QDA" ]; then
+        echo "  Instalando os dispositivos da Cyclone I a partir de $QDA ..."
+        ( cd "$QROOT" && "$LAUNCHER" quartus_sh --qinstall -qda "$QDA" ) 2>&1 \
+            | grep -E 'Successfully|Error|error' | sed 's/^/    /'
+    else
+        warn "Não achei o cyclone.qda em $SRC_DIR (pasta devices/subscription)."
+    fi
+fi
 echo "  Famílias instaladas em common/devinfo:"
 ls "$QROOT/common/devinfo" 2>/dev/null | tr '\n' ' ' | fold -w 76 | sed 's/^/    /'; echo
-if [ -d "$QROOT/common/devinfo/cyclone" ]; then
+if [ -d "$QROOT/common/devinfo/cyclone" ] && \
+   "$LAUNCHER" quartus_sh --tcl_eval get_part_list -family Cyclone 2>/dev/null | grep -q EP1C3T144C8; then
     ok "Cyclone I (EP1C3T144C8N) presente"
 else
-    warn "A pasta common/devinfo/cyclone (Cyclone I) NÃO existe."
-    QDA="$(find "$SRC_DIR" -maxdepth 3 -name cyclone.qda | head -1)"
-    [ -n "$QDA" ] && echo "    O arquivo da Cyclone I está em $QDA ($(file -b "$QDA" | cut -c1-60))"
-    echo "    Me mande essas linhas para eu ajustar a instalação dos dispositivos."
+    warn "O Quartus não lista a EP1C3T144C8 (Cyclone I)."
+    echo "    Tente: cd $QROOT && quartus11 quartus_sh --qinstall -qda <pasta>/devices/subscription/cyclone.qda"
 fi
 
 echo
