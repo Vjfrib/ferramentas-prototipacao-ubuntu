@@ -5,8 +5,9 @@
 #  Ubuntu 26.04 x86_64, ao lado do Quartus II 11.0 em ~/altera/11.0.
 #
 #  Uso:   bash instalar_modelsim11.sh
-#  Coloque antes em ~/Downloads o instalador baixado da Altera/Intel, por exemplo
-#  11.0_modelsim_ase_linux.sh (ou a pasta já extraída, ou um ModelSimSetup-*.run).
+#  Coloque antes em ~/Downloads o instalador baixado da Altera: o
+#  ModelSimSetup-13.1.0.162.run (o 11.0 para Linux saiu do site; o 13.1 funciona
+#  com o Quartus 11.0). Também serve um *_modelsim_ase_linux.sh antigo ou a pasta extraída.
 #  Outro caminho:  MODELSIM_SRC=/caminho/do/instalador bash instalar_modelsim11.sh
 #
 #  Pode rodar quantas vezes quiser: o que já foi feito é pulado.
@@ -75,8 +76,9 @@ else
         [ -n "$SRC" ] || SRC="$(find "$DL" -maxdepth 4 -type f -iname '*modelsim*.gz' 2>/dev/null | head -1 | xargs -r dirname)"
     fi
     [ -n "$SRC" ] && [ -e "$SRC" ] || die "Não achei o instalador do ModelSim em $DL.
-    Baixe o ModelSim-Altera Starter Edition 11.0 para Linux no site da Intel/Altera
-    (arquivo 11.0_modelsim_ase_linux.sh ou parecido), coloque em $DL e rode de novo.
+    Baixe o ModelSimSetup-13.1.0.162.run (ModelSim-Altera Starter, 818 MB) em
+    https://www.altera.com/downloads/fpga-development-tools/quartus-ii-web-edition-design-software-version-13-1-linux
+    (aba Individual Files; precisa de conta gratuita da Altera), coloque em $DL e rode de novo.
     Ou indique o caminho:  MODELSIM_SRC=/caminho/do/arquivo bash $0"
     ok "Instalador: $SRC"
 fi

@@ -33,7 +33,7 @@ Aparece um menu (whiptail) com as categorias. Cada opção roda o seu script, mo
 Só a parte da Altera precisa ser baixada antes, do site da Intel, e deixada em `~/Downloads`:
 
 - Quartus: `11.0_quartus_free_linux.sh`
-- ModelSim: o ModelSim-Altera Starter Edition 11.0 para Linux (ex.: `11.0_modelsim_ase_linux.sh`). Também serve a pasta já extraída ou um `ModelSimSetup-*.run`. Outro caminho: `MODELSIM_SRC=/caminho bash instalar_modelsim11.sh`.
+- ModelSim: `ModelSimSetup-13.1.0.162.run` (ModelSim-Altera Starter, 818 MB). O ModelSim 11.0 para Linux não está mais no site; o mais antigo que ainda existe é o do Quartus II 13.1, na [página do Quartus II Web Edition 13.1 para Linux](https://www.altera.com/downloads/fpga-development-tools/quartus-ii-web-edition-design-software-version-13-1-linux), aba **Individual Files**, item "ModelSim-Edition (includes Starter Edition)" (precisa entrar com uma conta gratuita da Altera). Ele funciona com o Quartus 11.0. Também servem um `11.x_modelsim_ase_linux.sh` antigo, se você tiver, ou a pasta já extraída. Outro caminho: `MODELSIM_SRC=/caminho bash instalar_modelsim11.sh`.
 
 O resto é baixado sozinho (apt, Flathub ou GitHub).
 
