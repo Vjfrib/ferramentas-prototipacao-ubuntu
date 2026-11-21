@@ -182,4 +182,5 @@ Na primeira vez, o Quartus abre uma caixinha de licença / Web Edition que trava
 
 - Ubuntu 26.04 LTS "resolute", x86_64, glibc 2.43, 8 GB de RAM: o Quartus II 11.0 Build 157 Web Edition (`11.0_quartus_free_linux.sh`) abre pelo ícone do menu e responde normalmente.
 - Ubuntu 24.04: os scripts do GHDL + GTKWave, KiCad e PrusaSlicer (pelo caminho do apt) rodaram de ponta a ponta, e o menu foi testado num terminal.
-- Ainda não rodados com o download de verdade: ModelSim (precisa do instalador da Intel), UGS e os apps do Flathub. Se algo falhar, o log de cada script mostra onde parou.
+- ModelSim testado com o `ModelSimSetup-13.1.0.162.run` (ModelSim 10.1d) no Ubuntu 26.04: instala e passa no teste do script.
+- Ainda não rodados com o download de verdade: UGS e os apps do Flathub. Se algo falhar, o log de cada script mostra onde parou.
