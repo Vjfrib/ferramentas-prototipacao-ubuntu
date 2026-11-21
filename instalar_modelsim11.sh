@@ -319,13 +319,17 @@ export GLIBC_TUNABLES="glibc.rtld.execstack=2"
 export LD_LIBRARY_PATH="$COMPAT\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
 export FONTCONFIG_FILE="$COMPAT/fonts.conf"
 export LC_NUMERIC=C
+# Sem argumentos e sem terminal (aberto pelo menu), o vsim entra no modo texto,
+# lê o fim da entrada e fecha. Nesse caso, força a janela.
+if [ "$t" = vsim ] && [ \$# -eq 0 ]; then set -- -gui; fi
 exec "$MS/$VCODIR/$t" "\$@"
 EOF
     chmod +x "$WRAP/$t"; n=$((n+1))
 done
 [ "$n" -gt 0 ] || die "nenhum executável encontrado em $MS/$VCODIR"
 # Atalho principal: modelsim11 (abre a interface) e links no PATH
-ln -sfn "$WRAP/vsim" "$WRAP/modelsim11"
+printf '#!/usr/bin/env bash\nexec "%s/vsim" -gui "$@"\n' "$WRAP" > "$WRAP/modelsim11"
+chmod +x "$WRAP/modelsim11"
 mkdir -p "$HOME/.local/bin"
 for t in "$WRAP"/*; do ln -sfn "$t" "$HOME/.local/bin/$(basename "$t")"; done
 ok "$n comandos em $WRAP (também em ~/.local/bin)"
@@ -337,7 +341,7 @@ cat > "$DESKTOP" <<EOF
 Type=Application
 Name=ModelSim-Altera 11.0
 Comment=Simulador VHDL/Verilog (Starter Edition)
-Exec=$WRAP/vsim
+Exec=$WRAP/vsim -gui
 Path=$HOME
 Icon=${ICON:-applications-science}
 Terminal=false
